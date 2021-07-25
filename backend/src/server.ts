@@ -19,6 +19,28 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(csrfProtection);
+// app.all('*', function (req, res) {
+//   res.cookie('XSRF-TOKEN', req.csrfToken())
+//   res.render('index')
+// })
+app.use((req, res, next) => {
+  res.cookie("XSRF-TOKEN", req.csrfToken(), {
+    httpOnly: true,
+    secure: true,
+    domain: "localhost",
+    sameSite: "strict",
+  });
+  next();
+});
+// app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+//   if (err.code !== "EBADCSRFTOKEN") return next(err);
+
+//   // handle CSRF token errors here
+//   res.status(403);
+//   res.send("form tampered with");
+// });
+
 app.use(
   session({
     cookieName: "session",
@@ -27,6 +49,9 @@ app.use(
     activeDuration: 7 * 24 * 60 * 60 * 1000, //7 Days of inactivity (Optional)
     cookie: {
       httpOnly: true, // don't let JS code access cookies
+      secure: true,
+      domain: "localhost",
+      sameSite: "strict",
     },
   })
 );
@@ -54,8 +79,9 @@ app.use(async (req: Request, res: Response, next: NextFunction) => {
 });
 
 const API_PREFIX = process.env.API_PREFIX;
-app.get(`${API_PREFIX}/auth/csrf-token`, csrfProtection, (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
+app.get(`${API_PREFIX}/auth/csrf-token`, (req, res) => {
+  res.status(200).send("success");
+  // res.json({ csrfToken: req.csrfToken() });
 });
 app.use(`${API_PREFIX}/user`, userRoute);
 console.log(`${API_PREFIX}/user`);
@@ -63,6 +89,7 @@ console.log(`${API_PREFIX}/user`);
 app.get("/", (req: any, res: { send: (arg0: string) => any }) =>
   res.send("Express + TypeScript Server")
 );
+
 // app.listen(PORT, () => {
 //   console.log(`⚡️[server]: Server is running at http://localhost:${PORT}`);
 // });
